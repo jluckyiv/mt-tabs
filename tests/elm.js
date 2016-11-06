@@ -10501,115 +10501,147 @@ var _elm_community$elm_test$Test$FuzzOptions = function (a) {
 	return {runs: a};
 };
 
-var _user$project$Ballot$sumPoints = F2(
-	function (scores, property) {
-		return _elm_lang$core$List$sum(
-			A2(
-				_elm_lang$core$List$map,
-				function (score) {
-					return property(score);
-				},
-				scores));
+var _user$project$Ballot$isParty = F2(
+	function (party, score) {
+		return _elm_lang$core$Native_Utils.eq(score.student.school.party, party);
 	});
-var _user$project$Ballot$crossExamPoints = F2(
-	function (ballot, party) {
-		var _p0 = party;
-		if (_p0.ctor === 'Prosecution') {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.defenseWitnessScores,
-				function (_) {
-					return _.prosecutionPoints;
-				});
-		} else {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.prosecutionWitnessScores,
-				function (_) {
-					return _.defensePoints;
-				});
-		}
+var _user$project$Ballot$isStudent = F2(
+	function (student, score) {
+		return _elm_lang$core$Native_Utils.eq(score.student, student);
 	});
-var _user$project$Ballot$directExamPoints = F2(
-	function (ballot, party) {
-		var _p1 = party;
-		if (_p1.ctor === 'Prosecution') {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.prosecutionWitnessScores,
-				function (_) {
-					return _.prosecutionPoints;
-				});
-		} else {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.defenseWitnessScores,
-				function (_) {
-					return _.defensePoints;
-				});
-		}
+var _user$project$Ballot$isPhase = F2(
+	function (phase, score) {
+		return _elm_lang$core$Native_Utils.eq(score.phase, phase);
 	});
-var _user$project$Ballot$witnessPoints = F2(
-	function (ballot, party) {
-		var _p2 = party;
-		if (_p2.ctor === 'Prosecution') {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.prosecutionWitnessScores,
-				function (_) {
-					return _.witnessPoints;
-				});
-		} else {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.defenseWitnessScores,
-				function (_) {
-					return _.witnessPoints;
-				});
-		}
-	});
-var _user$project$Ballot$nonWitnessPoints = F2(
-	function (ballot, party) {
-		var _p3 = party;
-		if (_p3.ctor === 'Prosecution') {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.scores,
-				function (_) {
-					return _.prosecutionPoints;
-				});
-		} else {
-			return A2(
-				_user$project$Ballot$sumPoints,
-				ballot.scores,
-				function (_) {
-					return _.defensePoints;
-				});
-		}
-	});
-var _user$project$Ballot$totalPoints = F2(
-	function (ballot, party) {
-		return _elm_lang$core$List$sum(
-			_elm_lang$core$Native_List.fromArray(
-				[
-					A2(_user$project$Ballot$nonWitnessPoints, ballot, party),
-					A2(_user$project$Ballot$directExamPoints, ballot, party),
-					A2(_user$project$Ballot$witnessPoints, ballot, party),
-					A2(_user$project$Ballot$crossExamPoints, ballot, party)
-				]));
-	});
-var _user$project$Ballot$score = F2(
-	function (ballot, phase) {
-		return _elm_lang$core$List$head(
-			A2(
-				_elm_lang$core$List$take,
-				1,
-				A2(
+var _user$project$Ballot$isAnyPretrial = function (score) {
+	var _p0 = score.phase;
+	if (_p0.ctor === 'Pretrial') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var _user$project$Ballot$isAnyCross = function (score) {
+	var _p1 = score.phase;
+	if (_p1.ctor === 'Cross') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var _user$project$Ballot$isAnyDirect = function (score) {
+	var _p2 = score.phase;
+	if (_p2.ctor === 'Direct') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var _user$project$Ballot$isAnyWitness = function (score) {
+	var _p3 = score.phase;
+	if (_p3.ctor === 'Witness') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var _user$project$Ballot$scoresForPhase = F2(
+	function (phase, scores) {
+		var _p4 = phase;
+		switch (_p4.ctor) {
+			case 'Pretrial':
+				if (_p4._0.ctor === 'Just') {
+					return A2(
+						_elm_lang$core$List$filter,
+						_user$project$Ballot$isPhase(phase),
+						scores);
+				} else {
+					return A2(_elm_lang$core$List$filter, _user$project$Ballot$isAnyPretrial, scores);
+				}
+			case 'Witness':
+				if (_p4._0.ctor === 'Just') {
+					return A2(
+						_elm_lang$core$List$filter,
+						_user$project$Ballot$isPhase(phase),
+						scores);
+				} else {
+					return A2(_elm_lang$core$List$filter, _user$project$Ballot$isAnyWitness, scores);
+				}
+			case 'Direct':
+				if (_p4._0.ctor === 'Just') {
+					return A2(
+						_elm_lang$core$List$filter,
+						_user$project$Ballot$isPhase(phase),
+						scores);
+				} else {
+					return A2(_elm_lang$core$List$filter, _user$project$Ballot$isAnyDirect, scores);
+				}
+			case 'Cross':
+				if (_p4._0.ctor === 'Just') {
+					return A2(
+						_elm_lang$core$List$filter,
+						_user$project$Ballot$isPhase(phase),
+						scores);
+				} else {
+					return A2(_elm_lang$core$List$filter, _user$project$Ballot$isAnyCross, scores);
+				}
+			default:
+				return A2(
 					_elm_lang$core$List$filter,
-					function (score) {
-						return _elm_lang$core$Native_Utils.eq(score.phase, phase);
-					},
-					ballot.scores)));
+					_user$project$Ballot$isPhase(phase),
+					scores);
+		}
+	});
+var _user$project$Ballot$scoresForParty = F2(
+	function (party, scores) {
+		return A2(
+			_elm_lang$core$List$filter,
+			_user$project$Ballot$isParty(party),
+			scores);
+	});
+var _user$project$Ballot$scoresForStudent = F2(
+	function (student, scores) {
+		return A2(
+			_elm_lang$core$List$filter,
+			_user$project$Ballot$isStudent(student),
+			scores);
+	});
+var _user$project$Ballot$pointsForScores = function (scores) {
+	return _elm_lang$core$List$sum(
+		A2(
+			_elm_lang$core$List$map,
+			function (score) {
+				return score.points;
+			},
+			scores));
+};
+var _user$project$Ballot$pointsForTeam = F3(
+	function (phase, party, ballot) {
+		var _p5 = phase;
+		if (_p5.ctor === 'All') {
+			return _user$project$Ballot$pointsForScores(
+				A2(_user$project$Ballot$scoresForParty, party, ballot.scores));
+		} else {
+			return _user$project$Ballot$pointsForScores(
+				A2(
+					_user$project$Ballot$scoresForPhase,
+					phase,
+					A2(_user$project$Ballot$scoresForParty, party, ballot.scores)));
+		}
+	});
+var _user$project$Ballot$pointsForStudent = F3(
+	function (phase, student, ballot) {
+		var _p6 = phase;
+		if (_p6.ctor === 'All') {
+			return _user$project$Ballot$pointsForScores(
+				A2(_user$project$Ballot$scoresForStudent, student, ballot.scores));
+		} else {
+			return _user$project$Ballot$pointsForScores(
+				A2(
+					_user$project$Ballot$scoresForPhase,
+					phase,
+					A2(_user$project$Ballot$scoresForStudent, student, ballot.scores)));
+		}
 	});
 var _user$project$Ballot$defenseTeamNumber = function (ballot) {
 	return ballot.defense.number;
@@ -10641,17 +10673,13 @@ var _user$project$Ballot$tournamentInformation = function (ballot) {
 			' ',
 			_elm_lang$core$Basics$toString(ballot.tournament.year)));
 };
-var _user$project$Ballot$Ballot = F9(
-	function (a, b, c, d, e, f, g, h, i) {
-		return {tournament: a, round: b, prosecution: c, defense: d, scores: e, prosecutionWitnessScores: f, defenseWitnessScores: g, attorneyRanks: h, witnessRanks: i};
-	});
-var _user$project$Ballot$Score = F5(
-	function (a, b, c, d, e) {
-		return {phase: a, prosecution: b, prosecutionPoints: c, defense: d, defensePoints: e};
-	});
-var _user$project$Ballot$WitnessScore = F7(
+var _user$project$Ballot$Ballot = F7(
 	function (a, b, c, d, e, f, g) {
-		return {phase: a, prosecution: b, prosecutionPoints: c, defense: d, defensePoints: e, witness: f, witnessPoints: g};
+		return {tournament: a, round: b, prosecution: c, defense: d, scores: e, attorneyRanks: f, witnessRanks: g};
+	});
+var _user$project$Ballot$Score = F3(
+	function (a, b, c) {
+		return {phase: a, student: b, points: c};
 	});
 var _user$project$Ballot$Tournament = F2(
 	function (a, b) {
@@ -10661,32 +10689,55 @@ var _user$project$Ballot$Round = F2(
 	function (a, b) {
 		return {number: a, scorer: b};
 	});
-var _user$project$Ballot$School = F2(
-	function (a, b) {
-		return {name: a, number: b};
+var _user$project$Ballot$School = F3(
+	function (a, b, c) {
+		return {name: a, number: b, party: c};
 	});
 var _user$project$Ballot$Student = F2(
 	function (a, b) {
 		return {name: a, school: b};
 	});
-var _user$project$Ballot$DefenseWitness = function (a) {
-	return {ctor: 'DefenseWitness', _0: a};
+var _user$project$Ballot$Tie = {ctor: 'Tie'};
+var _user$project$Ballot$Loss = function (a) {
+	return {ctor: 'Loss', _0: a};
 };
-var _user$project$Ballot$ProsecutionWitness = function (a) {
-	return {ctor: 'ProsecutionWitness', _0: a};
+var _user$project$Ballot$Win = function (a) {
+	return {ctor: 'Win', _0: a};
 };
+var _user$project$Ballot$All = {ctor: 'All'};
 var _user$project$Ballot$ClerkBailiff = {ctor: 'ClerkBailiff'};
 var _user$project$Ballot$Closing = {ctor: 'Closing'};
+var _user$project$Ballot$Cross = function (a) {
+	return {ctor: 'Cross', _0: a};
+};
+var _user$project$Ballot$Direct = function (a) {
+	return {ctor: 'Direct', _0: a};
+};
+var _user$project$Ballot$Witness = function (a) {
+	return {ctor: 'Witness', _0: a};
+};
 var _user$project$Ballot$Opening = {ctor: 'Opening'};
 var _user$project$Ballot$Pretrial = function (a) {
 	return {ctor: 'Pretrial', _0: a};
 };
 var _user$project$Ballot$Defense = {ctor: 'Defense'};
 var _user$project$Ballot$Prosecution = {ctor: 'Prosecution'};
+var _user$project$Ballot$result = F2(
+	function (school, ballot) {
+		var defPoints = A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Defense, ballot);
+		var prosPoints = A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Prosecution, ballot);
+		var margin = prosPoints - defPoints;
+		var _p7 = school.party;
+		if (_p7.ctor === 'Prosecution') {
+			return (_elm_lang$core$Native_Utils.cmp(margin, 0) > 0) ? _user$project$Ballot$Win(margin) : ((_elm_lang$core$Native_Utils.cmp(margin, 0) < 0) ? _user$project$Ballot$Loss(margin) : _user$project$Ballot$Tie);
+		} else {
+			return (_elm_lang$core$Native_Utils.cmp(margin, 0) < 0) ? _user$project$Ballot$Win(0 - margin) : ((_elm_lang$core$Native_Utils.cmp(margin, 0) > 0) ? _user$project$Ballot$Loss(0 - margin) : _user$project$Ballot$Tie);
+		}
+	});
 
-var _user$project$Tests$createTestBallot = function () {
+var _user$project$Tests$createManokianBallot = function () {
 	var round = A2(_user$project$Ballot$Round, 3, 'Sharis Manokian');
-	var king = A2(_user$project$Ballot$School, 'King', 7);
+	var king = A3(_user$project$Ballot$School, 'King', 7, _user$project$Ballot$Defense);
 	var rachelPriebe = A2(_user$project$Ballot$Student, 'Rachel Priebe', king);
 	var torrinDiaz = A2(_user$project$Ballot$Student, 'Torrin Diaz', king);
 	var cameronLucky = A2(_user$project$Ballot$Student, 'Cameron Lucky', king);
@@ -10696,119 +10747,199 @@ var _user$project$Tests$createTestBallot = function () {
 	var ericaSorenson = A2(_user$project$Ballot$Student, 'Erica Sorenson', king);
 	var elizabethMontoya = A2(_user$project$Ballot$Student, 'Elizabeth Montoya', king);
 	var carmenFloresLopez = A2(_user$project$Ballot$Student, 'Carmen Flores-Lopez', king);
-	var tamalpais = A2(_user$project$Ballot$School, 'Tamalpais', 20);
+	var tamalpais = A3(_user$project$Ballot$School, 'Tamalpais', 20, _user$project$Ballot$Prosecution);
 	var michaelPile = A2(_user$project$Ballot$Student, 'Michael Pile', tamalpais);
-	var pretrialArgument = A5(
-		_user$project$Ballot$Score,
-		_user$project$Ballot$Pretrial(
-			_elm_lang$core$Maybe$Just('Prepared Argument')),
-		michaelPile,
-		7,
-		rachelPriebe,
-		8);
-	var pretrialQuestions = A5(
-		_user$project$Ballot$Score,
-		_user$project$Ballot$Pretrial(
-			_elm_lang$core$Maybe$Just('Questions')),
-		michaelPile,
-		8,
-		rachelPriebe,
-		9);
 	var elissaAsch = A2(_user$project$Ballot$Student, 'Elissa Asch', tamalpais);
-	var openingStatements = A5(_user$project$Ballot$Score, _user$project$Ballot$Opening, elissaAsch, 9, torrinDiaz, 7);
-	var defWitness1 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$DefenseWitness('Addison Frey'),
-		elissaAsch,
-		9,
-		danielSosa,
-		9,
-		alexPigeon,
-		8);
 	var georgiaPemberton = A2(_user$project$Ballot$Student, 'Georgia Pemberton', tamalpais);
-	var defWitness3 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$DefenseWitness('Frankie Lyman'),
-		georgiaPemberton,
-		9,
-		torrinDiaz,
-		8,
-		elizabethMontoya,
-		9);
-	var defWitness4 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$DefenseWitness('Cameron Awbrey'),
-		georgiaPemberton,
-		10,
-		cameronLucky,
-		8,
-		carmenFloresLopez,
-		7);
-	var closingArguments = A5(_user$project$Ballot$Score, _user$project$Ballot$Closing, georgiaPemberton, 10, cameronLucky, 10);
 	var attorneyRanks = _elm_lang$core$Native_List.fromArray(
 		[elissaAsch, georgiaPemberton, cameronLucky]);
 	var carolineHerdman = A2(_user$project$Ballot$Student, 'Caroline Herdman', tamalpais);
-	var defWitness2 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$DefenseWitness('Devin Tyler'),
-		carolineHerdman,
-		8,
-		danielSosa,
-		9,
-		ericaSorenson,
-		10);
-	var defenseWitnessScores = _elm_lang$core$Native_List.fromArray(
-		[defWitness1, defWitness2, defWitness3, defWitness4]);
 	var robertDonohue = A2(_user$project$Ballot$Student, 'Robert Donohue', tamalpais);
-	var clerkBailiff = A5(_user$project$Ballot$Score, _user$project$Ballot$ClerkBailiff, robertDonohue, 10, hunterFisk, 10);
-	var scores = _elm_lang$core$Native_List.fromArray(
-		[pretrialArgument, pretrialQuestions, openingStatements, closingArguments, clerkBailiff]);
 	var aviPerkoff = A2(_user$project$Ballot$Student, 'Avi Perkoff', tamalpais);
-	var prosWitness1 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$ProsecutionWitness('Lin Stark'),
-		georgiaPemberton,
-		8,
-		torrinDiaz,
-		7,
-		aviPerkoff,
-		9);
 	var celesteMoore = A2(_user$project$Ballot$Student, 'Celeste Moore', tamalpais);
-	var prosWitness2 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$ProsecutionWitness('Hayden West'),
-		carolineHerdman,
-		8,
-		danielSosa,
-		8,
-		celesteMoore,
-		9);
 	var witnessRanks = _elm_lang$core$Native_List.fromArray(
 		[ericaSorenson, celesteMoore, aviPerkoff]);
 	var marioMicklow = A2(_user$project$Ballot$Student, 'Mario Micklow', tamalpais);
-	var prosWitness3 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$ProsecutionWitness('Julian Blake'),
-		carolineHerdman,
-		8,
-		cameronLucky,
-		9,
-		marioMicklow,
-		9);
-	var prosWitness4 = A7(
-		_user$project$Ballot$WitnessScore,
-		_user$project$Ballot$ProsecutionWitness('Dana Greyjoy'),
-		elissaAsch,
-		10,
-		torrinDiaz,
-		8,
-		marioMicklow,
-		9);
-	var prosecutionWitnessScores = _elm_lang$core$Native_List.fromArray(
-		[prosWitness1, prosWitness2, prosWitness3, prosWitness4]);
+	var scores = _elm_lang$core$Native_List.fromArray(
+		[
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Pretrial(
+				_elm_lang$core$Maybe$Just('Prepared Argument')),
+			michaelPile,
+			7),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Pretrial(
+				_elm_lang$core$Maybe$Just('Prepared Argument')),
+			rachelPriebe,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Pretrial(
+				_elm_lang$core$Maybe$Just('Questions')),
+			michaelPile,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Pretrial(
+				_elm_lang$core$Maybe$Just('Questions')),
+			rachelPriebe,
+			9),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Opening, elissaAsch, 9),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Opening, torrinDiaz, 7),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Lin Stark')),
+			georgiaPemberton,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Lin Stark')),
+			torrinDiaz,
+			7),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Lin Stark')),
+			aviPerkoff,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Hayden West')),
+			carolineHerdman,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Hayden West')),
+			danielSosa,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Hayden West')),
+			celesteMoore,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Julian Blake')),
+			carolineHerdman,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Julian Blake')),
+			cameronLucky,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Julian Blake')),
+			marioMicklow,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Dana Greyjoy')),
+			elissaAsch,
+			10),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Dana Greyjoy')),
+			torrinDiaz,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Dana Greyjoy')),
+			marioMicklow,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Addison Frey')),
+			elissaAsch,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Addison Frey')),
+			danielSosa,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Addison Frey')),
+			alexPigeon,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Devin Tyler')),
+			carolineHerdman,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Devin Tyler')),
+			danielSosa,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Devin Tyler')),
+			ericaSorenson,
+			10),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Frankie Lyman')),
+			georgiaPemberton,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Frankie Lyman')),
+			torrinDiaz,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Frankie Lyman')),
+			elizabethMontoya,
+			9),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Cross(
+				_elm_lang$core$Maybe$Just('Cameron Awbrey')),
+			georgiaPemberton,
+			10),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Direct(
+				_elm_lang$core$Maybe$Just('Cameron Awbrey')),
+			cameronLucky,
+			8),
+			A3(
+			_user$project$Ballot$Score,
+			_user$project$Ballot$Witness(
+				_elm_lang$core$Maybe$Just('Cameron Awbrey')),
+			carmenFloresLopez,
+			7),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Closing, georgiaPemberton, 10),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Closing, cameronLucky, 10),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$ClerkBailiff, robertDonohue, 10),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$ClerkBailiff, hunterFisk, 10)
+		]);
 	var sarahLunder = A2(_user$project$Ballot$Student, 'Sarah Lunder', tamalpais);
 	var tournament = A2(_user$project$Ballot$Tournament, 'Beach Ball Classic', 2016);
-	return A9(_user$project$Ballot$Ballot, tournament, round, tamalpais, king, scores, prosecutionWitnessScores, defenseWitnessScores, attorneyRanks, witnessRanks);
+	return A7(_user$project$Ballot$Ballot, tournament, round, tamalpais, king, scores, attorneyRanks, witnessRanks);
 }();
 var _user$project$Tests$all = A2(
 	_elm_community$elm_test$Test$describe,
@@ -10820,21 +10951,148 @@ var _user$project$Tests$all = A2(
 			'Basic information',
 			function (_p0) {
 				var _p1 = _p0;
-				var ballot = _user$project$Tests$createTestBallot;
+				var ballot = _user$project$Tests$createManokianBallot;
 				return A2(
 					_elm_community$elm_test$Expect$equal,
 					{
-						ctor: '_Tuple8',
+						ctor: '_Tuple6',
 						_0: _user$project$Ballot$tournamentInformation(ballot),
 						_1: _user$project$Ballot$roundInformation(ballot),
 						_2: _user$project$Ballot$prosecutionTeam(ballot),
 						_3: _user$project$Ballot$prosecutionTeamNumber(ballot),
 						_4: _user$project$Ballot$defenseTeam(ballot),
-						_5: _user$project$Ballot$defenseTeamNumber(ballot),
-						_6: A2(_user$project$Ballot$totalPoints, ballot, _user$project$Ballot$Prosecution),
-						_7: A2(_user$project$Ballot$totalPoints, ballot, _user$project$Ballot$Defense)
+						_5: _user$project$Ballot$defenseTeamNumber(ballot)
 					},
-					{ctor: '_Tuple8', _0: 'Beach Ball Classic 2016', _1: 'Round 3: Sharis Manokian', _2: 'Tamalpais', _3: 20, _4: 'King', _5: 7, _6: 150, _7: 144});
+					{ctor: '_Tuple6', _0: 'Beach Ball Classic 2016', _1: 'Round 3: Sharis Manokian', _2: 'Tamalpais', _3: 20, _4: 'King', _5: 7});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Team scoring',
+			function (_p2) {
+				var _p3 = _p2;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple4',
+						_0: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Prosecution, ballot),
+						_1: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Defense, ballot),
+						_2: A2(_user$project$Ballot$result, ballot.prosecution, ballot),
+						_3: A2(_user$project$Ballot$result, ballot.defense, ballot)
+					},
+					{
+						ctor: '_Tuple4',
+						_0: 150,
+						_1: 144,
+						_2: _user$project$Ballot$Win(6),
+						_3: _user$project$Ballot$Loss(-6)
+					});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Points for phases',
+			function (_p4) {
+				var _p5 = _p4;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple9',
+						_0: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$Opening, _user$project$Ballot$Prosecution, ballot),
+						_1: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$Closing, _user$project$Ballot$Prosecution, ballot),
+						_2: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$ClerkBailiff, _user$project$Ballot$Prosecution, ballot),
+						_3: A3(
+							_user$project$Ballot$pointsForTeam,
+							_user$project$Ballot$Pretrial(_elm_lang$core$Maybe$Nothing),
+							_user$project$Ballot$Prosecution,
+							ballot),
+						_4: A3(
+							_user$project$Ballot$pointsForTeam,
+							_user$project$Ballot$Pretrial(
+								_elm_lang$core$Maybe$Just('Prepared Argument')),
+							_user$project$Ballot$Prosecution,
+							ballot),
+						_5: A3(
+							_user$project$Ballot$pointsForTeam,
+							_user$project$Ballot$Direct(
+								_elm_lang$core$Maybe$Just('Lin Stark')),
+							_user$project$Ballot$Prosecution,
+							ballot),
+						_6: A3(
+							_user$project$Ballot$pointsForTeam,
+							_user$project$Ballot$Cross(
+								_elm_lang$core$Maybe$Just('Lin Stark')),
+							_user$project$Ballot$Defense,
+							ballot),
+						_7: A3(
+							_user$project$Ballot$pointsForTeam,
+							_user$project$Ballot$Witness(
+								_elm_lang$core$Maybe$Just('Lin Stark')),
+							_user$project$Ballot$Prosecution,
+							ballot),
+						_8: A3(
+							_user$project$Ballot$pointsForTeam,
+							_user$project$Ballot$Direct(_elm_lang$core$Maybe$Nothing),
+							_user$project$Ballot$Prosecution,
+							ballot)
+					},
+					{ctor: '_Tuple9', _0: 9, _1: 10, _2: 10, _3: 15, _4: 7, _5: 8, _6: 7, _7: 9, _8: 34});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Points for students',
+			function (_p6) {
+				var _p7 = _p6;
+				var king = A3(_user$project$Ballot$School, 'King', 7, _user$project$Ballot$Defense);
+				var torrinDiaz = A2(_user$project$Ballot$Student, 'Torrin Diaz', king);
+				var hunterFisk = A2(_user$project$Ballot$Student, 'Hunter Fisk', king);
+				var rachelPriebe = A2(_user$project$Ballot$Student, 'Rachel Priebe', king);
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple5',
+						_0: A3(_user$project$Ballot$pointsForStudent, _user$project$Ballot$All, torrinDiaz, ballot),
+						_1: A3(
+							_user$project$Ballot$pointsForStudent,
+							_user$project$Ballot$Cross(_elm_lang$core$Maybe$Nothing),
+							torrinDiaz,
+							ballot),
+						_2: A3(
+							_user$project$Ballot$pointsForStudent,
+							_user$project$Ballot$Direct(_elm_lang$core$Maybe$Nothing),
+							torrinDiaz,
+							ballot),
+						_3: A3(_user$project$Ballot$pointsForStudent, _user$project$Ballot$All, rachelPriebe, ballot),
+						_4: A3(_user$project$Ballot$pointsForStudent, _user$project$Ballot$All, hunterFisk, ballot)
+					},
+					{ctor: '_Tuple5', _0: 30, _1: 15, _2: 8, _3: 17, _4: 10});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Ranks for students',
+			function (_p8) {
+				var _p9 = _p8;
+				var tamalpais = A3(_user$project$Ballot$School, 'Tamalpais', 20, _user$project$Ballot$Prosecution);
+				var elissaAsch = A2(_user$project$Ballot$Student, 'Elissa Asch', tamalpais);
+				var georgiaPemberton = A2(_user$project$Ballot$Student, 'Georgia Pemberton', tamalpais);
+				var celesteMoore = A2(_user$project$Ballot$Student, 'Celeste Moore', tamalpais);
+				var aviPerkoff = A2(_user$project$Ballot$Student, 'Avi Perkoff', tamalpais);
+				var king = A3(_user$project$Ballot$School, 'King', 7, _user$project$Ballot$Defense);
+				var cameronLucky = A2(_user$project$Ballot$Student, 'Cameron Lucky', king);
+				var torrinDiaz = A2(_user$project$Ballot$Student, 'Torrin Diaz', king);
+				var ericaSorenson = A2(_user$project$Ballot$Student, 'Erica Sorenson', king);
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{ctor: '_Tuple2', _0: ballot.witnessRanks, _1: ballot.attorneyRanks},
+					{
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_List.fromArray(
+							[ericaSorenson, celesteMoore, aviPerkoff]),
+						_1: _elm_lang$core$Native_List.fromArray(
+							[elissaAsch, georgiaPemberton, cameronLucky])
+					});
 			})
 		]));
 

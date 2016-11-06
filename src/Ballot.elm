@@ -1,4 +1,24 @@
-module Ballot exposing (..)
+module Ballot
+    exposing
+        ( Ballot
+        , Tournament
+        , Round
+        , School
+        , Student
+        , Party(..)
+        , Phase(..)
+        , Result(..)
+        , Score
+        , tournamentInformation
+        , roundInformation
+        , prosecutionTeam
+        , prosecutionTeamNumber
+        , defenseTeam
+        , defenseTeamNumber
+        , pointsForTeam
+        , pointsForStudent
+        , result
+        )
 
 
 type alias Ballot =
@@ -7,39 +27,32 @@ type alias Ballot =
     , prosecution : School
     , defense : School
     , scores : List Score
-    , prosecutionWitnessScores : List WitnessScore
-    , defenseWitnessScores : List WitnessScore
     , attorneyRanks : List Student
     , witnessRanks : List Student
     }
 
 
+type Result
+    = Win Margin
+    | Loss Margin
+    | Tie
+
+
 type Phase
     = Pretrial (Maybe Description)
     | Opening
+    | Witness (Maybe Name)
+    | Direct (Maybe Name)
+    | Cross (Maybe Name)
     | Closing
     | ClerkBailiff
-    | ProsecutionWitness Name
-    | DefenseWitness Name
+    | All
 
 
 type alias Score =
     { phase : Phase
-    , prosecution : Student
-    , prosecutionPoints : Points
-    , defense : Student
-    , defensePoints : Points
-    }
-
-
-type alias WitnessScore =
-    { phase : Phase
-    , prosecution : Student
-    , prosecutionPoints : Points
-    , defense : Student
-    , defensePoints : Points
-    , witness : Student
-    , witnessPoints : Points
+    , student : Student
+    , points : Points
     }
 
 
@@ -58,6 +71,7 @@ type alias Round =
 type alias School =
     { name : Name
     , number : Int
+    , party : Party
     }
 
 
@@ -73,6 +87,10 @@ type Party
 
 
 type alias Points =
+    Int
+
+
+type alias Margin =
     Int
 
 
@@ -119,64 +137,159 @@ defenseTeamNumber ballot =
     ballot.defense.number
 
 
-score : Ballot -> Phase -> Maybe Score
-score ballot phase =
-    List.filter (\score -> score.phase == phase) ballot.scores
-        |> List.take 1
-        |> List.head
+result : School -> Ballot -> Result
+result school ballot =
+    let
+        prosPoints =
+            pointsForTeam All Prosecution ballot
+
+        defPoints =
+            pointsForTeam All Defense ballot
+
+        margin =
+            prosPoints - defPoints
+    in
+        case school.party of
+            Prosecution ->
+                if margin > 0 then
+                    Win margin
+                else if margin < 0 then
+                    Loss margin
+                else
+                    Tie
+
+            Defense ->
+                if margin < 0 then
+                    Win -margin
+                else if margin > 0 then
+                    Loss -margin
+                else
+                    Tie
 
 
-totalPoints : Party -> Ballot -> Int
-totalPoints party ballot =
-    List.sum
-        [ nonWitnessPoints party ballot
-        , directExamPoints party ballot
-        , witnessPoints party ballot
-        , crossExamPoints party ballot
-        ]
+pointsForStudent : Phase -> Student -> Ballot -> Int
+pointsForStudent phase student ballot =
+    case phase of
+        All ->
+            scoresForStudent student ballot.scores
+                |> pointsForScores
+
+        _ ->
+            scoresForStudent student ballot.scores
+                |> scoresForPhase phase
+                |> pointsForScores
 
 
-nonWitnessPoints : Party -> Ballot -> Int
-nonWitnessPoints party ballot =
-    case party of
-        Prosecution ->
-            sumPoints .prosecutionPoints ballot.scores
+pointsForTeam : Phase -> Party -> Ballot -> Int
+pointsForTeam phase party ballot =
+    case phase of
+        All ->
+            scoresForParty party ballot.scores
+                |> pointsForScores
 
-        Defense ->
-            sumPoints .defensePoints ballot.scores
-
-
-witnessPoints : Party -> Ballot -> Int
-witnessPoints party ballot =
-    case party of
-        Prosecution ->
-            sumPoints .witnessPoints ballot.prosecutionWitnessScores
-
-        Defense ->
-            sumPoints .witnessPoints ballot.defenseWitnessScores
+        _ ->
+            scoresForParty party ballot.scores
+                |> scoresForPhase phase
+                |> pointsForScores
 
 
-directExamPoints : Party -> Ballot -> Int
-directExamPoints party ballot =
-    case party of
-        Prosecution ->
-            sumPoints .prosecutionPoints ballot.prosecutionWitnessScores
-
-        Defense ->
-            sumPoints .defensePoints ballot.defenseWitnessScores
-
-
-crossExamPoints : Party -> Ballot -> Int
-crossExamPoints party ballot =
-    case party of
-        Prosecution ->
-            sumPoints .prosecutionPoints ballot.defenseWitnessScores
-
-        Defense ->
-            sumPoints .defensePoints ballot.prosecutionWitnessScores
-
-
-sumPoints : (score -> Points) -> List score -> Points
-sumPoints property scores =
-    List.map (\score -> property score) scores
+pointsForScores : List Score -> Points
+pointsForScores scores =
+    List.map (\score -> score.points) scores
         |> List.sum
+
+
+scoresForStudent : Student -> List Score -> List Score
+scoresForStudent student scores =
+    List.filter (isStudent student) scores
+
+
+scoresForParty : Party -> List Score -> List Score
+scoresForParty party scores =
+    List.filter (isParty party) scores
+
+
+scoresForPhase : Phase -> List Score -> List Score
+scoresForPhase phase scores =
+    case phase of
+        Pretrial (Just description) ->
+            List.filter (isPhase phase) scores
+
+        Pretrial _ ->
+            List.filter (isAnyPretrial) scores
+
+        Witness (Just name) ->
+            List.filter (isPhase phase) scores
+
+        Witness _ ->
+            List.filter (isAnyWitness) scores
+
+        Direct (Just name) ->
+            List.filter (isPhase phase) scores
+
+        Direct _ ->
+            List.filter (isAnyDirect) scores
+
+        Cross (Just name) ->
+            List.filter (isPhase phase) scores
+
+        Cross _ ->
+            List.filter (isAnyCross) scores
+
+        _ ->
+            List.filter (isPhase phase) scores
+
+
+isAnyWitness : Score -> Bool
+isAnyWitness score =
+    case score.phase of
+        Witness _ ->
+            True
+
+        _ ->
+            False
+
+
+isAnyDirect : Score -> Bool
+isAnyDirect score =
+    case score.phase of
+        Direct _ ->
+            True
+
+        _ ->
+            False
+
+
+isAnyCross : Score -> Bool
+isAnyCross score =
+    case score.phase of
+        Cross _ ->
+            True
+
+        _ ->
+            False
+
+
+isAnyPretrial : Score -> Bool
+isAnyPretrial score =
+    case score.phase of
+        Pretrial _ ->
+            True
+
+        _ ->
+            False
+
+
+isPhase : Phase -> Score -> Bool
+isPhase phase score =
+    score.phase == phase
+
+
+isStudent : Student -> Score -> Bool
+isStudent student score =
+    score.student == student
+
+
+isParty : Party -> Score -> Bool
+isParty party score =
+    score.student.school.party == party
