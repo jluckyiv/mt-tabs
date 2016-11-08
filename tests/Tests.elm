@@ -167,18 +167,79 @@ all =
                         , pointsForStudent alexPigeon All ballot
                         )
                         ( 7, 7, 8, 15, 8, 8, 30, 8, 8 )
-        , test "Ranks for students" <|
+        , test "Ranks for witnesses" <|
             \() ->
                 let
                     ballot =
                         createManokianBallot
                 in
                     Expect.equal
-                        ( ballot.witnessRanks
-                        , ballot.attorneyRanks
+                        (ranksForWitnesses ballot)
+                        ([ ( 5, ericaSorenson )
+                         , ( 4, celesteMoore )
+                         , ( 3, aviPerkoff )
+                         ]
                         )
-                        ( [ ericaSorenson, celesteMoore, aviPerkoff ]
-                        , [ elissaAsch, georgiaPemberton, cameronLucky ]
+        , test "Rank for individual witness" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        (rankForWitness ericaSorenson ballot)
+                        (( 5, ericaSorenson ))
+        , test "Rank for unranked witness" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ([ (rankForWitness elizabethMontoya ballot)
+                         , (rankForWitness cameronLucky ballot)
+                         ]
+                        )
+                        ([ ( 0, elizabethMontoya )
+                         , ( 0, cameronLucky )
+                         ]
+                        )
+        , test "Ranks for attorneys" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        (ranksForAttorneys ballot)
+                        ([ ( 5, elissaAsch )
+                         , ( 4, georgiaPemberton )
+                         , ( 3, cameronLucky )
+                         ]
+                        )
+        , test "Rank for individual attorney" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        (rankForAttorney elissaAsch ballot)
+                        (( 5, elissaAsch ))
+        , test "Rank for unranked attorney" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ([ (rankForAttorney elizabethMontoya ballot)
+                         , (rankForAttorney danielSosa ballot)
+                         ]
+                        )
+                        ([ ( 0, elizabethMontoya )
+                         , ( 0, danielSosa )
+                         ]
                         )
         ]
 

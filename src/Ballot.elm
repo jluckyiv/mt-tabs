@@ -1,25 +1,29 @@
 module Ballot
     exposing
         ( Ballot
-        , Tournament
-        , Round
-        , School
-        , Student
         , Party(..)
         , Phase(..)
         , Result(..)
+        , Round
+        , School
         , Score
-        , tournamentInformation
-        , roundInformation
-        , prosecutionTeam
-        , prosecutionTeamNumber
+        , Student
+        , Tournament
         , defenseTeam
         , defenseTeamNumber
         , pointsForParty
-        , pointsForStudent
         , pointsForSchool
+        , pointsForStudent
+        , prosecutionTeam
+        , prosecutionTeamNumber
+        , rankForAttorney
+        , rankForWitness
+        , ranksForAttorneys
+        , ranksForWitnesses
         , resultForParty
         , resultForSchool
+        , roundInformation
+        , tournamentInformation
         )
 
 
@@ -88,6 +92,10 @@ type Party
 
 
 type alias Points =
+    Int
+
+
+type alias Rank =
     Int
 
 
@@ -281,8 +289,56 @@ resultForSchool school ballot =
         Nothing
 
 
+rankForStudent : Student -> List ( Rank, Student ) -> ( Rank, Student )
+rankForStudent student ranks =
+    let
+        rank =
+            List.filter (\( _, rankedStudent ) -> rankedStudent == student) ranks
+    in
+        case List.head rank of
+            Just rank ->
+                rank
+
+            _ ->
+                ( 0, student )
+
+
+rankForWitness : Student -> Ballot -> ( Rank, Student )
+rankForWitness student ballot =
+    rankForStudent student (ranksForWitnesses ballot)
+
+
+rankForAttorney : Student -> Ballot -> ( Rank, Student )
+rankForAttorney student ballot =
+    rankForStudent student (ranksForAttorneys ballot)
+
+
+ranksForWitnesses : Ballot -> List ( Rank, Student )
 ranksForWitnesses ballot =
     List.indexedMap (,) ballot.witnessRanks
+        |> List.map convertIndexToRank
+
+
+ranksForAttorneys : Ballot -> List ( Rank, Student )
+ranksForAttorneys ballot =
+    List.indexedMap (,) ballot.attorneyRanks
+        |> List.map convertIndexToRank
+
+
+convertIndexToRank : ( Int, Student ) -> ( Rank, Student )
+convertIndexToRank ( index, student ) =
+    case index of
+        0 ->
+            ( 5, student )
+
+        1 ->
+            ( 4, student )
+
+        2 ->
+            ( 3, student )
+
+        _ ->
+            ( 0, student )
 
 
 isAnyWitness : Score -> Bool
