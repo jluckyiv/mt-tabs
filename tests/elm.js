@@ -10501,9 +10501,13 @@ var _elm_community$elm_test$Test$FuzzOptions = function (a) {
 	return {runs: a};
 };
 
-var _user$project$Ballot$isParty = F2(
-	function (party, score) {
-		return _elm_lang$core$Native_Utils.eq(score.student.school.party, party);
+var _user$project$Ballot$isDefense = F2(
+	function (school, ballot) {
+		return _elm_lang$core$Native_Utils.eq(ballot.defense, school);
+	});
+var _user$project$Ballot$isProsecution = F2(
+	function (school, ballot) {
+		return _elm_lang$core$Native_Utils.eq(ballot.prosecution, school);
 	});
 var _user$project$Ballot$isStudent = F2(
 	function (student, score) {
@@ -10544,6 +10548,15 @@ var _user$project$Ballot$isAnyWitness = function (score) {
 	} else {
 		return false;
 	}
+};
+var _user$project$Ballot$ranksForWitnesses = function (ballot) {
+	return A2(
+		_elm_lang$core$List$indexedMap,
+		F2(
+			function (v0, v1) {
+				return {ctor: '_Tuple2', _0: v0, _1: v1};
+			}),
+		ballot.witnessRanks);
 };
 var _user$project$Ballot$scoresForPhase = F2(
 	function (phase, scores) {
@@ -10592,13 +10605,6 @@ var _user$project$Ballot$scoresForPhase = F2(
 					scores);
 		}
 	});
-var _user$project$Ballot$scoresForParty = F2(
-	function (party, scores) {
-		return A2(
-			_elm_lang$core$List$filter,
-			_user$project$Ballot$isParty(party),
-			scores);
-	});
 var _user$project$Ballot$scoresForStudent = F2(
 	function (student, scores) {
 		return A2(
@@ -10606,7 +10612,32 @@ var _user$project$Ballot$scoresForStudent = F2(
 			_user$project$Ballot$isStudent(student),
 			scores);
 	});
-var _user$project$Ballot$pointsForScores = function (scores) {
+var _user$project$Ballot$isScoreForSchool = F2(
+	function (school, score) {
+		return _elm_lang$core$Native_Utils.eq(score.student.school, school);
+	});
+var _user$project$Ballot$scoresForDefense = function (ballot) {
+	return A2(
+		_elm_lang$core$List$filter,
+		_user$project$Ballot$isScoreForSchool(ballot.defense),
+		ballot.scores);
+};
+var _user$project$Ballot$scoresForProsecution = function (ballot) {
+	return A2(
+		_elm_lang$core$List$filter,
+		_user$project$Ballot$isScoreForSchool(ballot.prosecution),
+		ballot.scores);
+};
+var _user$project$Ballot$scoresForParty = F2(
+	function (party, ballot) {
+		var _p5 = party;
+		if (_p5.ctor === 'Prosecution') {
+			return _user$project$Ballot$scoresForProsecution(ballot);
+		} else {
+			return _user$project$Ballot$scoresForDefense(ballot);
+		}
+	});
+var _user$project$Ballot$sumScores = function (scores) {
 	return _elm_lang$core$List$sum(
 		A2(
 			_elm_lang$core$List$map,
@@ -10615,32 +10646,32 @@ var _user$project$Ballot$pointsForScores = function (scores) {
 			},
 			scores));
 };
-var _user$project$Ballot$pointsForTeam = F3(
-	function (phase, party, ballot) {
-		var _p5 = phase;
-		if (_p5.ctor === 'All') {
-			return _user$project$Ballot$pointsForScores(
-				A2(_user$project$Ballot$scoresForParty, party, ballot.scores));
-		} else {
-			return _user$project$Ballot$pointsForScores(
-				A2(
-					_user$project$Ballot$scoresForPhase,
-					phase,
-					A2(_user$project$Ballot$scoresForParty, party, ballot.scores)));
-		}
-	});
 var _user$project$Ballot$pointsForStudent = F3(
-	function (phase, student, ballot) {
+	function (student, phase, ballot) {
 		var _p6 = phase;
 		if (_p6.ctor === 'All') {
-			return _user$project$Ballot$pointsForScores(
+			return _user$project$Ballot$sumScores(
 				A2(_user$project$Ballot$scoresForStudent, student, ballot.scores));
 		} else {
-			return _user$project$Ballot$pointsForScores(
+			return _user$project$Ballot$sumScores(
 				A2(
 					_user$project$Ballot$scoresForPhase,
 					phase,
 					A2(_user$project$Ballot$scoresForStudent, student, ballot.scores)));
+		}
+	});
+var _user$project$Ballot$pointsForParty = F3(
+	function (party, phase, ballot) {
+		var _p7 = phase;
+		if (_p7.ctor === 'All') {
+			return _user$project$Ballot$sumScores(
+				A2(_user$project$Ballot$scoresForParty, party, ballot));
+		} else {
+			return _user$project$Ballot$sumScores(
+				A2(
+					_user$project$Ballot$scoresForPhase,
+					phase,
+					A2(_user$project$Ballot$scoresForParty, party, ballot)));
 		}
 	});
 var _user$project$Ballot$defenseTeamNumber = function (ballot) {
@@ -10689,9 +10720,9 @@ var _user$project$Ballot$Round = F2(
 	function (a, b) {
 		return {number: a, scorer: b};
 	});
-var _user$project$Ballot$School = F3(
-	function (a, b, c) {
-		return {name: a, number: b, party: c};
+var _user$project$Ballot$School = F2(
+	function (a, b) {
+		return {name: a, number: b};
 	});
 var _user$project$Ballot$Student = F2(
 	function (a, b) {
@@ -10722,366 +10753,541 @@ var _user$project$Ballot$Pretrial = function (a) {
 };
 var _user$project$Ballot$Defense = {ctor: 'Defense'};
 var _user$project$Ballot$Prosecution = {ctor: 'Prosecution'};
-var _user$project$Ballot$result = F2(
-	function (school, ballot) {
-		var defPoints = A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Defense, ballot);
-		var prosPoints = A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Prosecution, ballot);
+var _user$project$Ballot$pointsForSchool = F3(
+	function (school, phase, ballot) {
+		return A2(_user$project$Ballot$isProsecution, school, ballot) ? _elm_lang$core$Maybe$Just(
+			A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Prosecution, phase, ballot)) : (A2(_user$project$Ballot$isDefense, school, ballot) ? _elm_lang$core$Maybe$Just(
+			A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Defense, phase, ballot)) : _elm_lang$core$Maybe$Nothing);
+	});
+var _user$project$Ballot$resultForParty = F2(
+	function (party, ballot) {
+		var defPoints = A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Defense, _user$project$Ballot$All, ballot);
+		var prosPoints = A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Prosecution, _user$project$Ballot$All, ballot);
 		var margin = prosPoints - defPoints;
-		var _p7 = school.party;
-		if (_p7.ctor === 'Prosecution') {
+		var _p8 = party;
+		if (_p8.ctor === 'Prosecution') {
 			return (_elm_lang$core$Native_Utils.cmp(margin, 0) > 0) ? _user$project$Ballot$Win(margin) : ((_elm_lang$core$Native_Utils.cmp(margin, 0) < 0) ? _user$project$Ballot$Loss(margin) : _user$project$Ballot$Tie);
 		} else {
 			return (_elm_lang$core$Native_Utils.cmp(margin, 0) < 0) ? _user$project$Ballot$Win(0 - margin) : ((_elm_lang$core$Native_Utils.cmp(margin, 0) > 0) ? _user$project$Ballot$Loss(0 - margin) : _user$project$Ballot$Tie);
 		}
 	});
+var _user$project$Ballot$resultForSchool = F2(
+	function (school, ballot) {
+		return A2(_user$project$Ballot$isProsecution, school, ballot) ? _elm_lang$core$Maybe$Just(
+			A2(_user$project$Ballot$resultForParty, _user$project$Ballot$Prosecution, ballot)) : (A2(_user$project$Ballot$isDefense, school, ballot) ? _elm_lang$core$Maybe$Just(
+			A2(_user$project$Ballot$resultForParty, _user$project$Ballot$Defense, ballot)) : _elm_lang$core$Maybe$Nothing);
+	});
 
+var _user$project$Tests$round = A2(_user$project$Ballot$Round, 3, 'Sharis Manokian');
+var _user$project$Tests$king = A2(_user$project$Ballot$School, 'King', 7);
+var _user$project$Tests$rachelPriebe = A2(_user$project$Ballot$Student, 'Rachel Priebe', _user$project$Tests$king);
+var _user$project$Tests$torrinDiaz = A2(_user$project$Ballot$Student, 'Torrin Diaz', _user$project$Tests$king);
+var _user$project$Tests$cameronLucky = A2(_user$project$Ballot$Student, 'Cameron Lucky', _user$project$Tests$king);
+var _user$project$Tests$danielSosa = A2(_user$project$Ballot$Student, 'Daniel Sosa', _user$project$Tests$king);
+var _user$project$Tests$hunterFisk = A2(_user$project$Ballot$Student, 'Hunter Fisk', _user$project$Tests$king);
+var _user$project$Tests$alexPigeon = A2(_user$project$Ballot$Student, 'Alex Pigeon', _user$project$Tests$king);
+var _user$project$Tests$ericaSorenson = A2(_user$project$Ballot$Student, 'Erica Sorenson', _user$project$Tests$king);
+var _user$project$Tests$elizabethMontoya = A2(_user$project$Ballot$Student, 'Elizabeth Montoya', _user$project$Tests$king);
+var _user$project$Tests$carmenFloresLopez = A2(_user$project$Ballot$Student, 'Carmen Flores-Lopez', _user$project$Tests$king);
+var _user$project$Tests$tamalpais = A2(_user$project$Ballot$School, 'Tamalpais', 20);
+var _user$project$Tests$michaelPile = A2(_user$project$Ballot$Student, 'Michael Pile', _user$project$Tests$tamalpais);
+var _user$project$Tests$elissaAsch = A2(_user$project$Ballot$Student, 'Elissa Asch', _user$project$Tests$tamalpais);
+var _user$project$Tests$georgiaPemberton = A2(_user$project$Ballot$Student, 'Georgia Pemberton', _user$project$Tests$tamalpais);
+var _user$project$Tests$carolineHerdman = A2(_user$project$Ballot$Student, 'Caroline Herdman', _user$project$Tests$tamalpais);
+var _user$project$Tests$robertDonohue = A2(_user$project$Ballot$Student, 'Robert Donohue', _user$project$Tests$tamalpais);
+var _user$project$Tests$aviPerkoff = A2(_user$project$Ballot$Student, 'Avi Perkoff', _user$project$Tests$tamalpais);
+var _user$project$Tests$celesteMoore = A2(_user$project$Ballot$Student, 'Celeste Moore', _user$project$Tests$tamalpais);
+var _user$project$Tests$marioMicklow = A2(_user$project$Ballot$Student, 'Mario Micklow', _user$project$Tests$tamalpais);
+var _user$project$Tests$sarahLunder = A2(_user$project$Ballot$Student, 'Sarah Lunder', _user$project$Tests$tamalpais);
+var _user$project$Tests$tournament = A2(_user$project$Ballot$Tournament, 'Beach Ball Classic', 2016);
 var _user$project$Tests$createManokianBallot = function () {
-	var round = A2(_user$project$Ballot$Round, 3, 'Sharis Manokian');
-	var king = A3(_user$project$Ballot$School, 'King', 7, _user$project$Ballot$Defense);
-	var rachelPriebe = A2(_user$project$Ballot$Student, 'Rachel Priebe', king);
-	var torrinDiaz = A2(_user$project$Ballot$Student, 'Torrin Diaz', king);
-	var cameronLucky = A2(_user$project$Ballot$Student, 'Cameron Lucky', king);
-	var danielSosa = A2(_user$project$Ballot$Student, 'Daniel Sosa', king);
-	var hunterFisk = A2(_user$project$Ballot$Student, 'Hunter Fisk', king);
-	var alexPigeon = A2(_user$project$Ballot$Student, 'Alex Pigeon', king);
-	var ericaSorenson = A2(_user$project$Ballot$Student, 'Erica Sorenson', king);
-	var elizabethMontoya = A2(_user$project$Ballot$Student, 'Elizabeth Montoya', king);
-	var carmenFloresLopez = A2(_user$project$Ballot$Student, 'Carmen Flores-Lopez', king);
-	var tamalpais = A3(_user$project$Ballot$School, 'Tamalpais', 20, _user$project$Ballot$Prosecution);
-	var michaelPile = A2(_user$project$Ballot$Student, 'Michael Pile', tamalpais);
-	var elissaAsch = A2(_user$project$Ballot$Student, 'Elissa Asch', tamalpais);
-	var georgiaPemberton = A2(_user$project$Ballot$Student, 'Georgia Pemberton', tamalpais);
-	var attorneyRanks = _elm_lang$core$Native_List.fromArray(
-		[elissaAsch, georgiaPemberton, cameronLucky]);
-	var carolineHerdman = A2(_user$project$Ballot$Student, 'Caroline Herdman', tamalpais);
-	var robertDonohue = A2(_user$project$Ballot$Student, 'Robert Donohue', tamalpais);
-	var aviPerkoff = A2(_user$project$Ballot$Student, 'Avi Perkoff', tamalpais);
-	var celesteMoore = A2(_user$project$Ballot$Student, 'Celeste Moore', tamalpais);
 	var witnessRanks = _elm_lang$core$Native_List.fromArray(
-		[ericaSorenson, celesteMoore, aviPerkoff]);
-	var marioMicklow = A2(_user$project$Ballot$Student, 'Mario Micklow', tamalpais);
+		[_user$project$Tests$ericaSorenson, _user$project$Tests$celesteMoore, _user$project$Tests$aviPerkoff]);
+	var attorneyRanks = _elm_lang$core$Native_List.fromArray(
+		[_user$project$Tests$elissaAsch, _user$project$Tests$georgiaPemberton, _user$project$Tests$cameronLucky]);
 	var scores = _elm_lang$core$Native_List.fromArray(
 		[
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Pretrial(
 				_elm_lang$core$Maybe$Just('Prepared Argument')),
-			michaelPile,
+			_user$project$Tests$michaelPile,
 			7),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Pretrial(
 				_elm_lang$core$Maybe$Just('Prepared Argument')),
-			rachelPriebe,
+			_user$project$Tests$rachelPriebe,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Pretrial(
 				_elm_lang$core$Maybe$Just('Questions')),
-			michaelPile,
+			_user$project$Tests$michaelPile,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Pretrial(
 				_elm_lang$core$Maybe$Just('Questions')),
-			rachelPriebe,
+			_user$project$Tests$rachelPriebe,
 			9),
-			A3(_user$project$Ballot$Score, _user$project$Ballot$Opening, elissaAsch, 9),
-			A3(_user$project$Ballot$Score, _user$project$Ballot$Opening, torrinDiaz, 7),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Opening, _user$project$Tests$elissaAsch, 9),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Opening, _user$project$Tests$torrinDiaz, 7),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Lin Stark')),
-			georgiaPemberton,
+			_user$project$Tests$georgiaPemberton,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Lin Stark')),
-			torrinDiaz,
+			_user$project$Tests$torrinDiaz,
 			7),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Lin Stark')),
-			aviPerkoff,
+			_user$project$Tests$aviPerkoff,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Hayden West')),
-			carolineHerdman,
+			_user$project$Tests$carolineHerdman,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Hayden West')),
-			danielSosa,
+			_user$project$Tests$danielSosa,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Hayden West')),
-			celesteMoore,
+			_user$project$Tests$celesteMoore,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Julian Blake')),
-			carolineHerdman,
+			_user$project$Tests$carolineHerdman,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Julian Blake')),
-			cameronLucky,
+			_user$project$Tests$cameronLucky,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Julian Blake')),
-			marioMicklow,
+			_user$project$Tests$marioMicklow,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Dana Greyjoy')),
-			elissaAsch,
+			_user$project$Tests$elissaAsch,
 			10),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Dana Greyjoy')),
-			torrinDiaz,
+			_user$project$Tests$torrinDiaz,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Dana Greyjoy')),
-			marioMicklow,
+			_user$project$Tests$marioMicklow,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Addison Frey')),
-			elissaAsch,
+			_user$project$Tests$elissaAsch,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Addison Frey')),
-			danielSosa,
+			_user$project$Tests$danielSosa,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Addison Frey')),
-			alexPigeon,
+			_user$project$Tests$alexPigeon,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Devin Tyler')),
-			carolineHerdman,
+			_user$project$Tests$carolineHerdman,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Devin Tyler')),
-			danielSosa,
+			_user$project$Tests$danielSosa,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Devin Tyler')),
-			ericaSorenson,
+			_user$project$Tests$ericaSorenson,
 			10),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Frankie Lyman')),
-			georgiaPemberton,
+			_user$project$Tests$georgiaPemberton,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Frankie Lyman')),
-			torrinDiaz,
+			_user$project$Tests$torrinDiaz,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Frankie Lyman')),
-			elizabethMontoya,
+			_user$project$Tests$elizabethMontoya,
 			9),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Cross(
 				_elm_lang$core$Maybe$Just('Cameron Awbrey')),
-			georgiaPemberton,
+			_user$project$Tests$georgiaPemberton,
 			10),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Direct(
 				_elm_lang$core$Maybe$Just('Cameron Awbrey')),
-			cameronLucky,
+			_user$project$Tests$cameronLucky,
 			8),
 			A3(
 			_user$project$Ballot$Score,
 			_user$project$Ballot$Witness(
 				_elm_lang$core$Maybe$Just('Cameron Awbrey')),
-			carmenFloresLopez,
+			_user$project$Tests$carmenFloresLopez,
 			7),
-			A3(_user$project$Ballot$Score, _user$project$Ballot$Closing, georgiaPemberton, 10),
-			A3(_user$project$Ballot$Score, _user$project$Ballot$Closing, cameronLucky, 10),
-			A3(_user$project$Ballot$Score, _user$project$Ballot$ClerkBailiff, robertDonohue, 10),
-			A3(_user$project$Ballot$Score, _user$project$Ballot$ClerkBailiff, hunterFisk, 10)
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Closing, _user$project$Tests$georgiaPemberton, 10),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$Closing, _user$project$Tests$cameronLucky, 10),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$ClerkBailiff, _user$project$Tests$robertDonohue, 10),
+			A3(_user$project$Ballot$Score, _user$project$Ballot$ClerkBailiff, _user$project$Tests$hunterFisk, 10)
 		]);
-	var sarahLunder = A2(_user$project$Ballot$Student, 'Sarah Lunder', tamalpais);
-	var tournament = A2(_user$project$Ballot$Tournament, 'Beach Ball Classic', 2016);
-	return A7(_user$project$Ballot$Ballot, tournament, round, tamalpais, king, scores, attorneyRanks, witnessRanks);
+	return A7(_user$project$Ballot$Ballot, _user$project$Tests$tournament, _user$project$Tests$round, _user$project$Tests$tamalpais, _user$project$Tests$king, scores, attorneyRanks, witnessRanks);
 }();
 var _user$project$Tests$all = A2(
 	_elm_community$elm_test$Test$describe,
-	'Ballot information',
+	'Ballot',
 	_elm_lang$core$Native_List.fromArray(
 		[
 			A2(
 			_elm_community$elm_test$Test$test,
-			'Basic information',
+			'Tournament information',
 			function (_p0) {
 				var _p1 = _p0;
 				var ballot = _user$project$Tests$createManokianBallot;
 				return A2(
 					_elm_community$elm_test$Expect$equal,
-					{
-						ctor: '_Tuple6',
-						_0: _user$project$Ballot$tournamentInformation(ballot),
-						_1: _user$project$Ballot$roundInformation(ballot),
-						_2: _user$project$Ballot$prosecutionTeam(ballot),
-						_3: _user$project$Ballot$prosecutionTeamNumber(ballot),
-						_4: _user$project$Ballot$defenseTeam(ballot),
-						_5: _user$project$Ballot$defenseTeamNumber(ballot)
-					},
-					{ctor: '_Tuple6', _0: 'Beach Ball Classic 2016', _1: 'Round 3: Sharis Manokian', _2: 'Tamalpais', _3: 20, _4: 'King', _5: 7});
+					_user$project$Ballot$tournamentInformation(ballot),
+					'Beach Ball Classic 2016');
 			}),
 			A2(
 			_elm_community$elm_test$Test$test,
-			'Team scoring',
+			'Round information',
 			function (_p2) {
 				var _p3 = _p2;
 				var ballot = _user$project$Tests$createManokianBallot;
 				return A2(
 					_elm_community$elm_test$Expect$equal,
-					{
-						ctor: '_Tuple4',
-						_0: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Prosecution, ballot),
-						_1: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$All, _user$project$Ballot$Defense, ballot),
-						_2: A2(_user$project$Ballot$result, ballot.prosecution, ballot),
-						_3: A2(_user$project$Ballot$result, ballot.defense, ballot)
-					},
-					{
-						ctor: '_Tuple4',
-						_0: 150,
-						_1: 144,
-						_2: _user$project$Ballot$Win(6),
-						_3: _user$project$Ballot$Loss(-6)
-					});
+					_user$project$Ballot$roundInformation(ballot),
+					'Round 3: Sharis Manokian');
 			}),
 			A2(
 			_elm_community$elm_test$Test$test,
-			'Points for phases',
+			'Prosecution information',
 			function (_p4) {
 				var _p5 = _p4;
 				var ballot = _user$project$Tests$createManokianBallot;
 				return A2(
 					_elm_community$elm_test$Expect$equal,
 					{
-						ctor: '_Tuple9',
-						_0: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$Opening, _user$project$Ballot$Prosecution, ballot),
-						_1: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$Closing, _user$project$Ballot$Prosecution, ballot),
-						_2: A3(_user$project$Ballot$pointsForTeam, _user$project$Ballot$ClerkBailiff, _user$project$Ballot$Prosecution, ballot),
-						_3: A3(
-							_user$project$Ballot$pointsForTeam,
-							_user$project$Ballot$Pretrial(_elm_lang$core$Maybe$Nothing),
-							_user$project$Ballot$Prosecution,
-							ballot),
-						_4: A3(
-							_user$project$Ballot$pointsForTeam,
-							_user$project$Ballot$Pretrial(
-								_elm_lang$core$Maybe$Just('Prepared Argument')),
-							_user$project$Ballot$Prosecution,
-							ballot),
-						_5: A3(
-							_user$project$Ballot$pointsForTeam,
-							_user$project$Ballot$Direct(
-								_elm_lang$core$Maybe$Just('Lin Stark')),
-							_user$project$Ballot$Prosecution,
-							ballot),
-						_6: A3(
-							_user$project$Ballot$pointsForTeam,
-							_user$project$Ballot$Cross(
-								_elm_lang$core$Maybe$Just('Lin Stark')),
-							_user$project$Ballot$Defense,
-							ballot),
-						_7: A3(
-							_user$project$Ballot$pointsForTeam,
-							_user$project$Ballot$Witness(
-								_elm_lang$core$Maybe$Just('Lin Stark')),
-							_user$project$Ballot$Prosecution,
-							ballot),
-						_8: A3(
-							_user$project$Ballot$pointsForTeam,
-							_user$project$Ballot$Direct(_elm_lang$core$Maybe$Nothing),
-							_user$project$Ballot$Prosecution,
-							ballot)
+						ctor: '_Tuple2',
+						_0: _user$project$Ballot$prosecutionTeam(ballot),
+						_1: _user$project$Ballot$prosecutionTeamNumber(ballot)
 					},
-					{ctor: '_Tuple9', _0: 9, _1: 10, _2: 10, _3: 15, _4: 7, _5: 8, _6: 7, _7: 9, _8: 34});
+					{ctor: '_Tuple2', _0: 'Tamalpais', _1: 20});
 			}),
 			A2(
 			_elm_community$elm_test$Test$test,
-			'Points for students',
+			'Defense information',
 			function (_p6) {
 				var _p7 = _p6;
-				var king = A3(_user$project$Ballot$School, 'King', 7, _user$project$Ballot$Defense);
-				var torrinDiaz = A2(_user$project$Ballot$Student, 'Torrin Diaz', king);
-				var hunterFisk = A2(_user$project$Ballot$Student, 'Hunter Fisk', king);
-				var rachelPriebe = A2(_user$project$Ballot$Student, 'Rachel Priebe', king);
 				var ballot = _user$project$Tests$createManokianBallot;
 				return A2(
 					_elm_community$elm_test$Expect$equal,
 					{
-						ctor: '_Tuple5',
-						_0: A3(_user$project$Ballot$pointsForStudent, _user$project$Ballot$All, torrinDiaz, ballot),
+						ctor: '_Tuple2',
+						_0: _user$project$Ballot$defenseTeam(ballot),
+						_1: _user$project$Ballot$defenseTeamNumber(ballot)
+					},
+					{ctor: '_Tuple2', _0: 'King', _1: 7});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Prosecution scoring',
+			function (_p8) {
+				var _p9 = _p8;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple4',
+						_0: A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Prosecution, _user$project$Ballot$All, ballot),
+						_1: A3(_user$project$Ballot$pointsForSchool, ballot.prosecution, _user$project$Ballot$All, ballot),
+						_2: A2(_user$project$Ballot$resultForParty, _user$project$Ballot$Prosecution, ballot),
+						_3: A2(_user$project$Ballot$resultForSchool, ballot.prosecution, ballot)
+					},
+					{
+						ctor: '_Tuple4',
+						_0: 150,
+						_1: _elm_lang$core$Maybe$Just(150),
+						_2: _user$project$Ballot$Win(6),
+						_3: _elm_lang$core$Maybe$Just(
+							_user$project$Ballot$Win(6))
+					});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Defense scoring',
+			function (_p10) {
+				var _p11 = _p10;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple4',
+						_0: A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Defense, _user$project$Ballot$All, ballot),
+						_1: A3(_user$project$Ballot$pointsForSchool, ballot.defense, _user$project$Ballot$All, ballot),
+						_2: A2(_user$project$Ballot$resultForParty, _user$project$Ballot$Defense, ballot),
+						_3: A2(_user$project$Ballot$resultForSchool, ballot.defense, ballot)
+					},
+					{
+						ctor: '_Tuple4',
+						_0: 144,
+						_1: _elm_lang$core$Maybe$Just(144),
+						_2: _user$project$Ballot$Loss(-6),
+						_3: _elm_lang$core$Maybe$Just(
+							_user$project$Ballot$Loss(-6))
+					});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Points for pretrial',
+			function (_p12) {
+				var _p13 = _p12;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple6',
+						_0: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Pretrial(_elm_lang$core$Maybe$Nothing),
+							ballot),
+						_1: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Pretrial(
+								_elm_lang$core$Maybe$Just('Prepared Argument')),
+							ballot),
+						_2: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Pretrial(
+								_elm_lang$core$Maybe$Just('Questions')),
+							ballot),
+						_3: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Pretrial(_elm_lang$core$Maybe$Nothing),
+							ballot),
+						_4: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Pretrial(
+								_elm_lang$core$Maybe$Just('Prepared Argument')),
+							ballot),
+						_5: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Pretrial(
+								_elm_lang$core$Maybe$Just('Questions')),
+							ballot)
+					},
+					{ctor: '_Tuple6', _0: 15, _1: 7, _2: 8, _3: 17, _4: 8, _5: 9});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Points for clerk and bailiff',
+			function (_p14) {
+				var _p15 = _p14;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple2',
+						_0: A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Prosecution, _user$project$Ballot$ClerkBailiff, ballot),
+						_1: A3(_user$project$Ballot$pointsForParty, _user$project$Ballot$Defense, _user$project$Ballot$ClerkBailiff, ballot)
+					},
+					{ctor: '_Tuple2', _0: 10, _1: 10});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Points for examinations',
+			function (_p16) {
+				var _p17 = _p16;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple4',
+						_0: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Direct(_elm_lang$core$Maybe$Nothing),
+							ballot),
+						_1: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Cross(_elm_lang$core$Maybe$Nothing),
+							ballot),
+						_2: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Direct(_elm_lang$core$Maybe$Nothing),
+							ballot),
+						_3: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Cross(_elm_lang$core$Maybe$Nothing),
+							ballot)
+					},
+					{ctor: '_Tuple4', _0: 34, _1: 36, _2: 34, _3: 32});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Points for individual examinations',
+			function (_p18) {
+				var _p19 = _p18;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple6',
+						_0: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Direct(
+								_elm_lang$core$Maybe$Just('Lin Stark')),
+							ballot),
+						_1: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Cross(
+								_elm_lang$core$Maybe$Just('Lin Stark')),
+							ballot),
+						_2: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Witness(
+								_elm_lang$core$Maybe$Just('Lin Stark')),
+							ballot),
+						_3: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Direct(
+								_elm_lang$core$Maybe$Just('Devin Tyler')),
+							ballot),
+						_4: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Prosecution,
+							_user$project$Ballot$Cross(
+								_elm_lang$core$Maybe$Just('Devin Tyler')),
+							ballot),
+						_5: A3(
+							_user$project$Ballot$pointsForParty,
+							_user$project$Ballot$Defense,
+							_user$project$Ballot$Witness(
+								_elm_lang$core$Maybe$Just('Devin Tyler')),
+							ballot)
+					},
+					{ctor: '_Tuple6', _0: 8, _1: 7, _2: 9, _3: 9, _4: 8, _5: 10});
+			}),
+			A2(
+			_elm_community$elm_test$Test$test,
+			'Points for students',
+			function (_p20) {
+				var _p21 = _p20;
+				var ballot = _user$project$Tests$createManokianBallot;
+				return A2(
+					_elm_community$elm_test$Expect$equal,
+					{
+						ctor: '_Tuple9',
+						_0: A3(_user$project$Ballot$pointsForStudent, _user$project$Tests$torrinDiaz, _user$project$Ballot$Opening, ballot),
 						_1: A3(
 							_user$project$Ballot$pointsForStudent,
-							_user$project$Ballot$Cross(_elm_lang$core$Maybe$Nothing),
-							torrinDiaz,
+							_user$project$Tests$torrinDiaz,
+							_user$project$Ballot$Cross(
+								_elm_lang$core$Maybe$Just('Lin Stark')),
 							ballot),
 						_2: A3(
 							_user$project$Ballot$pointsForStudent,
-							_user$project$Ballot$Direct(_elm_lang$core$Maybe$Nothing),
-							torrinDiaz,
+							_user$project$Tests$torrinDiaz,
+							_user$project$Ballot$Cross(
+								_elm_lang$core$Maybe$Just('Dana Greyjoy')),
 							ballot),
-						_3: A3(_user$project$Ballot$pointsForStudent, _user$project$Ballot$All, rachelPriebe, ballot),
-						_4: A3(_user$project$Ballot$pointsForStudent, _user$project$Ballot$All, hunterFisk, ballot)
+						_3: A3(
+							_user$project$Ballot$pointsForStudent,
+							_user$project$Tests$torrinDiaz,
+							_user$project$Ballot$Cross(_elm_lang$core$Maybe$Nothing),
+							ballot),
+						_4: A3(
+							_user$project$Ballot$pointsForStudent,
+							_user$project$Tests$torrinDiaz,
+							_user$project$Ballot$Direct(
+								_elm_lang$core$Maybe$Just('Frankie Lyman')),
+							ballot),
+						_5: A3(
+							_user$project$Ballot$pointsForStudent,
+							_user$project$Tests$torrinDiaz,
+							_user$project$Ballot$Direct(_elm_lang$core$Maybe$Nothing),
+							ballot),
+						_6: A3(_user$project$Ballot$pointsForStudent, _user$project$Tests$torrinDiaz, _user$project$Ballot$All, ballot),
+						_7: A3(
+							_user$project$Ballot$pointsForStudent,
+							_user$project$Tests$alexPigeon,
+							_user$project$Ballot$Witness(
+								_elm_lang$core$Maybe$Just('Addison Frey')),
+							ballot),
+						_8: A3(_user$project$Ballot$pointsForStudent, _user$project$Tests$alexPigeon, _user$project$Ballot$All, ballot)
 					},
-					{ctor: '_Tuple5', _0: 30, _1: 15, _2: 8, _3: 17, _4: 10});
+					{ctor: '_Tuple9', _0: 7, _1: 7, _2: 8, _3: 15, _4: 8, _5: 8, _6: 30, _7: 8, _8: 8});
 			}),
 			A2(
 			_elm_community$elm_test$Test$test,
 			'Ranks for students',
-			function (_p8) {
-				var _p9 = _p8;
-				var tamalpais = A3(_user$project$Ballot$School, 'Tamalpais', 20, _user$project$Ballot$Prosecution);
-				var elissaAsch = A2(_user$project$Ballot$Student, 'Elissa Asch', tamalpais);
-				var georgiaPemberton = A2(_user$project$Ballot$Student, 'Georgia Pemberton', tamalpais);
-				var celesteMoore = A2(_user$project$Ballot$Student, 'Celeste Moore', tamalpais);
-				var aviPerkoff = A2(_user$project$Ballot$Student, 'Avi Perkoff', tamalpais);
-				var king = A3(_user$project$Ballot$School, 'King', 7, _user$project$Ballot$Defense);
-				var cameronLucky = A2(_user$project$Ballot$Student, 'Cameron Lucky', king);
-				var torrinDiaz = A2(_user$project$Ballot$Student, 'Torrin Diaz', king);
-				var ericaSorenson = A2(_user$project$Ballot$Student, 'Erica Sorenson', king);
+			function (_p22) {
+				var _p23 = _p22;
 				var ballot = _user$project$Tests$createManokianBallot;
 				return A2(
 					_elm_community$elm_test$Expect$equal,
@@ -11089,9 +11295,9 @@ var _user$project$Tests$all = A2(
 					{
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_List.fromArray(
-							[ericaSorenson, celesteMoore, aviPerkoff]),
+							[_user$project$Tests$ericaSorenson, _user$project$Tests$celesteMoore, _user$project$Tests$aviPerkoff]),
 						_1: _elm_lang$core$Native_List.fromArray(
-							[elissaAsch, georgiaPemberton, cameronLucky])
+							[_user$project$Tests$elissaAsch, _user$project$Tests$georgiaPemberton, _user$project$Tests$cameronLucky])
 					});
 			})
 		]));

@@ -15,9 +15,11 @@ module Ballot
         , prosecutionTeamNumber
         , defenseTeam
         , defenseTeamNumber
-        , pointsForTeam
+        , pointsForParty
         , pointsForStudent
-        , result
+        , pointsForSchool
+        , resultForParty
+        , resultForSchool
         )
 
 
@@ -71,7 +73,6 @@ type alias Round =
 type alias School =
     { name : Name
     , number : Int
-    , party : Party
     }
 
 
@@ -137,76 +138,76 @@ defenseTeamNumber ballot =
     ballot.defense.number
 
 
-result : School -> Ballot -> Result
-result school ballot =
-    let
-        prosPoints =
-            pointsForTeam All Prosecution ballot
+pointsForParty : Party -> Phase -> Ballot -> Points
+pointsForParty party phase ballot =
+    case phase of
+        All ->
+            scoresForParty party ballot
+                |> sumScores
 
-        defPoints =
-            pointsForTeam All Defense ballot
-
-        margin =
-            prosPoints - defPoints
-    in
-        case school.party of
-            Prosecution ->
-                if margin > 0 then
-                    Win margin
-                else if margin < 0 then
-                    Loss margin
-                else
-                    Tie
-
-            Defense ->
-                if margin < 0 then
-                    Win -margin
-                else if margin > 0 then
-                    Loss -margin
-                else
-                    Tie
+        _ ->
+            scoresForParty party ballot
+                |> scoresForPhase phase
+                |> sumScores
 
 
-pointsForStudent : Phase -> Student -> Ballot -> Int
-pointsForStudent phase student ballot =
+pointsForSchool : School -> Phase -> Ballot -> Maybe Int
+pointsForSchool school phase ballot =
+    if isProsecution school ballot then
+        Just (pointsForParty Prosecution phase ballot)
+    else if isDefense school ballot then
+        Just (pointsForParty Defense phase ballot)
+    else
+        Nothing
+
+
+pointsForStudent : Student -> Phase -> Ballot -> Int
+pointsForStudent student phase ballot =
     case phase of
         All ->
             scoresForStudent student ballot.scores
-                |> pointsForScores
+                |> sumScores
 
         _ ->
             scoresForStudent student ballot.scores
                 |> scoresForPhase phase
-                |> pointsForScores
+                |> sumScores
 
 
-pointsForTeam : Phase -> Party -> Ballot -> Int
-pointsForTeam phase party ballot =
-    case phase of
-        All ->
-            scoresForParty party ballot.scores
-                |> pointsForScores
-
-        _ ->
-            scoresForParty party ballot.scores
-                |> scoresForPhase phase
-                |> pointsForScores
-
-
-pointsForScores : List Score -> Points
-pointsForScores scores =
+sumScores : List Score -> Points
+sumScores scores =
     List.map (\score -> score.points) scores
         |> List.sum
+
+
+scoresForParty : Party -> Ballot -> List Score
+scoresForParty party ballot =
+    case party of
+        Prosecution ->
+            scoresForProsecution ballot
+
+        Defense ->
+            scoresForDefense ballot
+
+
+scoresForProsecution : Ballot -> List Score
+scoresForProsecution ballot =
+    List.filter (isScoreForSchool ballot.prosecution) ballot.scores
+
+
+scoresForDefense : Ballot -> List Score
+scoresForDefense ballot =
+    List.filter (isScoreForSchool ballot.defense) ballot.scores
+
+
+isScoreForSchool : School -> Score -> Bool
+isScoreForSchool school score =
+    score.student.school == school
 
 
 scoresForStudent : Student -> List Score -> List Score
 scoresForStudent student scores =
     List.filter (isStudent student) scores
-
-
-scoresForParty : Party -> List Score -> List Score
-scoresForParty party scores =
-    List.filter (isParty party) scores
 
 
 scoresForPhase : Phase -> List Score -> List Score
@@ -238,6 +239,50 @@ scoresForPhase phase scores =
 
         _ ->
             List.filter (isPhase phase) scores
+
+
+resultForParty : Party -> Ballot -> Result
+resultForParty party ballot =
+    let
+        prosPoints =
+            pointsForParty Prosecution All ballot
+
+        defPoints =
+            pointsForParty Defense All ballot
+
+        margin =
+            prosPoints - defPoints
+    in
+        case party of
+            Prosecution ->
+                if margin > 0 then
+                    Win margin
+                else if margin < 0 then
+                    Loss margin
+                else
+                    Tie
+
+            Defense ->
+                if margin < 0 then
+                    Win -margin
+                else if margin > 0 then
+                    Loss -margin
+                else
+                    Tie
+
+
+resultForSchool : School -> Ballot -> Maybe Result
+resultForSchool school ballot =
+    if isProsecution school ballot then
+        Just (resultForParty Prosecution ballot)
+    else if isDefense school ballot then
+        Just (resultForParty Defense ballot)
+    else
+        Nothing
+
+
+ranksForWitnesses ballot =
+    List.indexedMap (,) ballot.witnessRanks
 
 
 isAnyWitness : Score -> Bool
@@ -290,6 +335,50 @@ isStudent student score =
     score.student == student
 
 
-isParty : Party -> Score -> Bool
-isParty party score =
-    score.student.school.party == party
+isProsecution : School -> Ballot -> Bool
+isProsecution school ballot =
+    ballot.prosecution == school
+
+
+isDefense : School -> Ballot -> Bool
+isDefense school ballot =
+    ballot.defense == school
+
+
+
+-- pointsForProsecution : Phase -> Ballot -> Points
+-- pointsForProsecution phase ballot =
+--     case phase of
+--         All ->
+--             scoresForProsecution ballot
+--                 |> sumScores
+--
+--         _ ->
+--             scoresForProsecution ballot
+--                 |> scoresForPhase phase
+--                 |> sumScores
+--
+--
+-- pointsForDefense : Phase -> Ballot -> Points
+-- pointsForDefense phase ballot =
+--     case phase of
+--         All ->
+--             scoresForDefense ballot
+--                 |> sumScores
+--
+--         _ ->
+--             scoresForDefense ballot
+--                 |> scoresForPhase phase
+--                 |> sumScores
+--
+--
+-- partyForSchool : School -> Ballot -> Maybe Party
+-- partyForSchool school ballot =
+--     if ballot.prosecution == school then
+--         Just Prosecution
+--     else if ballot.defense == school then
+--         Just Defense
+--     else
+--         Nothing
+--
+--

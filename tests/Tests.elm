@@ -8,135 +8,170 @@ import Ballot exposing (..)
 
 all : Test
 all =
-    describe "Ballot information"
-        [ test "Basic information" <|
+    describe "Ballot"
+        [ test "Tournament information" <|
             \() ->
                 let
                     ballot =
                         createManokianBallot
                 in
                     Expect.equal
-                        ( tournamentInformation ballot
-                        , roundInformation ballot
-                        , prosecutionTeam ballot
-                        , prosecutionTeamNumber ballot
-                        , defenseTeam ballot
-                        , defenseTeamNumber ballot
-                        )
-                        ( "Beach Ball Classic 2016"
-                        , "Round 3: Sharis Manokian"
-                        , "Tamalpais"
-                        , 20
-                        , "King"
-                        , 7
-                        )
-        , test "Team scoring" <|
+                        (tournamentInformation ballot)
+                        "Beach Ball Classic 2016"
+        , test "Round information" <|
             \() ->
                 let
                     ballot =
                         createManokianBallot
                 in
                     Expect.equal
-                        ( pointsForTeam All Prosecution ballot
-                        , pointsForTeam All Defense ballot
-                        , result ballot.prosecution ballot
-                        , result ballot.defense ballot
-                        )
-                        ( 150
-                        , 144
-                        , Win 6
-                        , Loss -6
-                        )
-        , test "Points for phases" <|
+                        (roundInformation ballot)
+                        "Round 3: Sharis Manokian"
+        , test "Prosecution information" <|
             \() ->
                 let
                     ballot =
                         createManokianBallot
                 in
                     Expect.equal
-                        ( pointsForTeam Opening Prosecution ballot
-                        , pointsForTeam Closing Prosecution ballot
-                        , pointsForTeam ClerkBailiff Prosecution ballot
-                        , pointsForTeam (Pretrial <| Nothing) Prosecution ballot
-                        , pointsForTeam (Pretrial <| Just "Prepared Argument") Prosecution ballot
-                        , pointsForTeam (Direct <| Just "Lin Stark") Prosecution ballot
-                        , pointsForTeam (Cross <| Just "Lin Stark") Defense ballot
-                        , pointsForTeam (Witness <| Just "Lin Stark") Prosecution ballot
-                        , pointsForTeam (Direct <| Nothing) Prosecution ballot
+                        ( prosecutionTeam ballot, prosecutionTeamNumber ballot )
+                        ( "Tamalpais", 20 )
+        , test "Defense information" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ( defenseTeam ballot, defenseTeamNumber ballot )
+                        ( "King", 7 )
+        , test "Prosecution scoring" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ( pointsForParty Prosecution All ballot
+                        , pointsForSchool ballot.prosecution All ballot
+                        , resultForParty Prosecution ballot
+                        , resultForSchool ballot.prosecution ballot
                         )
-                        ( 9
-                        , 10
-                        , 10
-                        , 15
-                        , 7
-                        , 8
-                        , 7
-                        , 9
-                        , 34
+                        ( 150, Just 150, Win 6, Just (Win 6) )
+        , test "Defense scoring" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ( pointsForParty Defense All ballot
+                        , pointsForSchool ballot.defense All ballot
+                        , resultForParty Defense ballot
+                        , resultForSchool ballot.defense ballot
                         )
+                        ( 144, Just 144, Loss -6, Just (Loss -6) )
+        , test "Points for pretrial" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ( pointsForParty Prosecution
+                            (Pretrial <| Nothing)
+                            ballot
+                        , pointsForParty Prosecution
+                            (Pretrial <| Just "Prepared Argument")
+                            ballot
+                        , pointsForParty Prosecution
+                            (Pretrial <| Just "Questions")
+                            ballot
+                        , pointsForParty Defense
+                            (Pretrial <| Nothing)
+                            ballot
+                        , pointsForParty Defense
+                            (Pretrial <| Just "Prepared Argument")
+                            ballot
+                        , pointsForParty Defense
+                            (Pretrial <| Just "Questions")
+                            ballot
+                        )
+                        ( 15, 7, 8, 17, 8, 9 )
+        , test "Points for clerk and bailiff" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ( pointsForParty Prosecution ClerkBailiff ballot
+                        , pointsForParty Defense ClerkBailiff ballot
+                        )
+                        ( 10, 10 )
+        , test "Points for examinations" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ( pointsForParty Prosecution (Direct <| Nothing) ballot
+                        , pointsForParty Prosecution (Cross <| Nothing) ballot
+                        , pointsForParty Defense (Direct <| Nothing) ballot
+                        , pointsForParty Defense (Cross <| Nothing) ballot
+                        )
+                        ( 34, 36, 34, 32 )
+        , test "Points for individual examinations" <|
+            \() ->
+                let
+                    ballot =
+                        createManokianBallot
+                in
+                    Expect.equal
+                        ( pointsForParty Prosecution
+                            (Direct <| Just "Lin Stark")
+                            ballot
+                        , pointsForParty Defense
+                            (Cross <| Just "Lin Stark")
+                            ballot
+                        , pointsForParty Prosecution
+                            (Witness <| Just "Lin Stark")
+                            ballot
+                        , pointsForParty Defense
+                            (Direct <| Just "Devin Tyler")
+                            ballot
+                        , pointsForParty Prosecution
+                            (Cross <| Just "Devin Tyler")
+                            ballot
+                        , pointsForParty Defense
+                            (Witness <| Just "Devin Tyler")
+                            ballot
+                        )
+                        ( 8, 7, 9, 9, 8, 10 )
         , test "Points for students" <|
             \() ->
                 let
                     ballot =
                         createManokianBallot
-
-                    king =
-                        School "King" 7 Defense
-
-                    torrinDiaz =
-                        Student "Torrin Diaz" king
-
-                    hunterFisk =
-                        Student "Hunter Fisk" king
-
-                    rachelPriebe =
-                        Student "Rachel Priebe" king
                 in
                     Expect.equal
-                        ( pointsForStudent All torrinDiaz ballot
-                        , pointsForStudent (Cross <| Nothing) torrinDiaz ballot
-                        , pointsForStudent (Direct <| Nothing) torrinDiaz ballot
-                        , pointsForStudent All rachelPriebe ballot
-                        , pointsForStudent All hunterFisk ballot
+                        ( pointsForStudent torrinDiaz Opening ballot
+                        , pointsForStudent torrinDiaz (Cross <| Just "Lin Stark") ballot
+                        , pointsForStudent torrinDiaz (Cross <| Just "Dana Greyjoy") ballot
+                        , pointsForStudent torrinDiaz (Cross <| Nothing) ballot
+                        , pointsForStudent torrinDiaz (Direct <| Just "Frankie Lyman") ballot
+                        , pointsForStudent torrinDiaz (Direct <| Nothing) ballot
+                        , pointsForStudent torrinDiaz All ballot
+                        , pointsForStudent alexPigeon (Witness <| Just "Addison Frey") ballot
+                        , pointsForStudent alexPigeon All ballot
                         )
-                        ( 30
-                        , 15
-                        , 8
-                        , 17
-                        , 10
-                        )
+                        ( 7, 7, 8, 15, 8, 8, 30, 8, 8 )
         , test "Ranks for students" <|
             \() ->
                 let
                     ballot =
                         createManokianBallot
-
-                    king =
-                        School "King" 7 Defense
-
-                    tamalpais =
-                        School "Tamalpais" 20 Prosecution
-
-                    elissaAsch =
-                        Student "Elissa Asch" tamalpais
-
-                    georgiaPemberton =
-                        Student "Georgia Pemberton" tamalpais
-
-                    cameronLucky =
-                        Student "Cameron Lucky" king
-
-                    torrinDiaz =
-                        Student "Torrin Diaz" king
-
-                    ericaSorenson =
-                        Student "Erica Sorenson" king
-
-                    celesteMoore =
-                        Student "Celeste Moore" tamalpais
-
-                    aviPerkoff =
-                        Student "Avi Perkoff" tamalpais
                 in
                     Expect.equal
                         ( ballot.witnessRanks
@@ -148,74 +183,96 @@ all =
         ]
 
 
+tournament =
+    Tournament "Beach Ball Classic" 2016
+
+
+tamalpais =
+    School "Tamalpais" 20
+
+
+king =
+    School "King" 7
+
+
+round =
+    Round 3 "Sharis Manokian"
+
+
+michaelPile =
+    Student "Michael Pile" tamalpais
+
+
+rachelPriebe =
+    Student "Rachel Priebe" king
+
+
+elissaAsch =
+    Student "Elissa Asch" tamalpais
+
+
+torrinDiaz =
+    Student "Torrin Diaz" king
+
+
+georgiaPemberton =
+    Student "Georgia Pemberton" tamalpais
+
+
+cameronLucky =
+    Student "Cameron Lucky" king
+
+
+carolineHerdman =
+    Student "Caroline Herdman" tamalpais
+
+
+danielSosa =
+    Student "Daniel Sosa" king
+
+
+robertDonohue =
+    Student "Robert Donohue" tamalpais
+
+
+hunterFisk =
+    Student "Hunter Fisk" king
+
+
+aviPerkoff =
+    Student "Avi Perkoff" tamalpais
+
+
+celesteMoore =
+    Student "Celeste Moore" tamalpais
+
+
+marioMicklow =
+    Student "Mario Micklow" tamalpais
+
+
+sarahLunder =
+    Student "Sarah Lunder" tamalpais
+
+
+alexPigeon =
+    Student "Alex Pigeon" king
+
+
+ericaSorenson =
+    Student "Erica Sorenson" king
+
+
+elizabethMontoya =
+    Student "Elizabeth Montoya" king
+
+
+carmenFloresLopez =
+    Student "Carmen Flores-Lopez" king
+
+
 createManokianBallot =
     let
-        tournament =
-            Tournament "Beach Ball Classic" 2016
-
-        tamalpais =
-            School "Tamalpais" 20 Prosecution
-
-        king =
-            School "King" 7 Defense
-
-        round =
-            Round 3 "Sharis Manokian"
-
-        michaelPile =
-            Student "Michael Pile" tamalpais
-
-        rachelPriebe =
-            Student "Rachel Priebe" king
-
-        elissaAsch =
-            Student "Elissa Asch" tamalpais
-
-        torrinDiaz =
-            Student "Torrin Diaz" king
-
-        georgiaPemberton =
-            Student "Georgia Pemberton" tamalpais
-
-        cameronLucky =
-            Student "Cameron Lucky" king
-
-        carolineHerdman =
-            Student "Caroline Herdman" tamalpais
-
-        danielSosa =
-            Student "Daniel Sosa" king
-
-        robertDonohue =
-            Student "Robert Donohue" tamalpais
-
-        hunterFisk =
-            Student "Hunter Fisk" king
-
-        aviPerkoff =
-            Student "Avi Perkoff" tamalpais
-
-        celesteMoore =
-            Student "Celeste Moore" tamalpais
-
-        marioMicklow =
-            Student "Mario Micklow" tamalpais
-
-        sarahLunder =
-            Student "Sarah Lunder" tamalpais
-
-        alexPigeon =
-            Student "Alex Pigeon" king
-
-        ericaSorenson =
-            Student "Erica Sorenson" king
-
-        elizabethMontoya =
-            Student "Elizabeth Montoya" king
-
-        carmenFloresLopez =
-            Student "Carmen Flores-Lopez" king
-
         scores =
             [ Score (Pretrial <| Just "Prepared Argument")
                 michaelPile
